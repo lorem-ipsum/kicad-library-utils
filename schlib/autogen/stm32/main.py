@@ -58,6 +58,10 @@ class pin:
         self.y = 0;
         self.placed = False
 
+        # fix bogus NC type labeling
+        if self.name == "NC":
+            self.pintype = "NC"
+
     def createPintext(self, left):
         if (left):
             if (self.name == ""):
