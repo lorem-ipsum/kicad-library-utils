@@ -3,6 +3,7 @@
 import sys,os,math
 from lxml import etree
 import re
+import requests
 
 SPECIAL_PIN_MAPPING = {"VSS/TH": ["VSS/TH"],
                        "PC13-ANTI_TAMP": ["PC13", "ANTI_TAMP"],
@@ -428,7 +429,10 @@ class device:
         
     def createDocu(self):
         pdfprefix = "http://www.st.com/resource/en/datasheet/"
-        pdf = pdfprefix + self.name[:-2] + ".pdf"
+        self.pdf = pdfprefix + self.name[:-2] + ".pdf"
+        if requests.head(self.pdf, allow_redirects=True).status_code != 200:
+            print("URL invalid: " + self.pdf)
+            self.pdf = ""
         names = [self.name] + self.aliases
         s = ""
         for name in names:
@@ -440,7 +444,7 @@ class device:
                 s += "Voltage: " + self.voltage[0] + ".." + self.voltage[1] + "V "
             s += "IO-pins: " + self.io + "\r\n"
             s += "K " + " ".join([self.core, self.family, self.line]) + "\r\n"
-            s += "F " + pdf + "\r\n"   # TODO: Add docfiles to devices, maybe url to docfiles follows pattern?
+            s += "F " + self.pdf + "\r\n"
             s += "$ENDCMP\r\n"
         self.docustring = s
 
@@ -467,8 +471,9 @@ def main():
 
         for xmlfile in files:
             mcu = device(os.path.join(args[1], xmlfile))
-            lib.write(mcu.componentstring)
-            docu.write(mcu.docustring)
+            if mcu.pdf != "":
+                lib.write(mcu.componentstring)
+                docu.write(mcu.docustring)
 
         lib.write("#\r\n# End Library\r\n")
         lib.close()
