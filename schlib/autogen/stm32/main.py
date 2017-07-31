@@ -460,7 +460,7 @@ class device:
         s += "F0 \"U\" " + str(round(- self.boxWidth / 2)) + " " + str(round(yOffset) + 25) + " 50 H V L B\r\n"
         s += "F1 \"" + self.name + "\" " + str(round(self.boxWidth / 2)) + " " + str(round(yOffset) + 25) + " 50 H V R B\r\n"
         s += "F2 \"" + self.package + "\" " + str(round(self.boxWidth / 2)) + " " + str(round(yOffset) - 25) + " 50 H I R T\r\n"
-        s += "F3 \"~\" 0 0 50 H V C CNN\r\n"
+        s += "F3 \"\" 0 0 50 H I C CNN\r\n"
         if (len(self.aliases) > 0):
             s += "ALIAS " + " ".join(self.aliases) + "\r\n"
         s += "DRAW\r\n"
