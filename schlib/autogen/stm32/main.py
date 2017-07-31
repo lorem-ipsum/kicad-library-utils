@@ -71,17 +71,15 @@ class pin:
         self.pintext = s.replace(" ","")
 
 class device:
-    def __init__(self, xmlfile, pdfdir):
+    def __init__(self, xmlfile):
         print(xmlfile)
         self.xmlfile = xmlfile
-        self.pdfdir = pdfdir
         self.name = ""
         self.package = ""
         self.pins = []
         self.aliases = []
 
         self.readxml()
-        self.readpdf()
         self.createComponent()
         self.createDocu()
 
@@ -176,66 +174,6 @@ class device:
                 return False
         return True
 
-    def readpdf(self):
-        self.pdf = "NOSHEET"
-        files = []
-        for (dirpath, dirnames, filenames) in os.walk(self.pdfdir):
-            files.extend(filenames)
-            break
-
-        s = self.name
-
-        #print("NEW: " + s)
-        candidatestring = {}
-        for pdf in files:
-            if(pdf.endswith(".pdf.par")):   # Find all processed PDF files and open them for evaluation
-                p = open(os.path.join(self.pdfdir, pdf), "r")
-                for line in p:
-                    if(line.find(s[:8]) >= 0):
-                        candidatenames = line.rstrip().translate(str.maketrans(","," ")).split()    # Remove newline and commas and then split string
-                        for candidatename in candidatenames:
-                            candidatestring[candidatename] = pdf    # Associate file with every device name
-                    if(not line.startswith("STM32")):   # Assume that the device names are always at the beginning of file
-                        break
-        #print(candidatestring)  # TODO: CONTINUE HERE!!!!
-        keystokeep = []
-        for key in candidatestring:
-            # Some heuristic here
-            minussplit = key.split("-")
-            variants = minussplit[0].split("/")
-            if (len(minussplit) > 1):
-                suffix = "x" + "x".join(minussplit[1:])
-            else:
-                suffix = ""
-            strings = [suffix + variants[0]]
-            for var in variants[1:]:
-                strings.append(strings[0][:-len(var)] + var + suffix)
-            for string in strings:
-                if self.xcompare(s, string):
-                    keystokeep.append(key)
-        
-        winners = []    # I got too tired of this
-        for key in unique(keystokeep):
-            try:
-                winners.append(candidatestring.pop(key))
-            except:
-                pass
-
-        #print(winners)
-        if(len(winners) > 0):
-            firstwinner = winners[0]
-            #print(winners)
-            for winner in winners:
-                if(winner == firstwinner):
-                    self.pdf = winner[:-4]
-                else:
-                    print("Multiple datasheet determined for this device: " + self.name + "(" + str(winners) + ")")
-                    self.pdf = "NOSHEET"
-                    break
-        
-        if(self.pdf == "NOSHEET"):
-            print("Datasheet could not be determined for this device: " + self.name)
-    
     def runDRC(self):
         pinNumMap = {}
         removePins = []
@@ -489,10 +427,8 @@ class device:
         self.componentstring = s
         
     def createDocu(self):
-        pdfprefix = "http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/"
-        if(self.pdf == "NOSHEET"):
-            pdfprefix = ""
-            self.pdf = ""
+        pdfprefix = "http://www.st.com/resource/en/datasheet/"
+        pdf = pdfprefix + self.name[:-2] + ".pdf"
         names = [self.name] + self.aliases
         s = ""
         for name in names:
@@ -504,17 +440,16 @@ class device:
                 s += "Voltage: " + self.voltage[0] + ".." + self.voltage[1] + "V "
             s += "IO-pins: " + self.io + "\r\n"
             s += "K " + " ".join([self.core, self.family, self.line]) + "\r\n"
-            s += "F " + pdfprefix + self.pdf + "\r\n"   # TODO: Add docfiles to devices, maybe url to docfiles follows pattern?
+            s += "F " + pdf + "\r\n"   # TODO: Add docfiles to devices, maybe url to docfiles follows pattern?
             s += "$ENDCMP\r\n"
         self.docustring = s
-
 
 def main():
     args = sys.argv
     
-    if(not len(args) == 3 or args[1] == "help"):
+    if(not len(args) == 2 or args[1] == "help"):
         printHelp()
-    elif(os.path.isdir(args[1]) and os.path.isdir(args[2])):
+    elif(os.path.isdir(args[1])):
 
         lib = open("stm32.lib", "w")
         docu = open("stm32.dcm", "w")
@@ -524,19 +459,6 @@ def main():
         docu.write("EESchema-DOCLIB  Version 2.0\r\n#\r\n")
 
         files = []
-        for (dirpath, dirnames, filenames) in os.walk(args[2]):
-            files.extend(filenames)
-            break
-        
-
-        for pdffile in files:
-            pdffile = os.path.join(args[2], pdffile)
-            pdfparsedfile = pdffile + ".par"
-            if(not os.path.isfile(pdfparsedfile) and pdffile.endswith(".pdf")):
-                print("Converting: " + pdffile)
-                os.system("pdf2txt.py -o " + pdfparsedfile + " " + pdffile)
-
-        files = []
         for (dirpath, dirnames, filenames) in os.walk(args[1]):
             files.extend(filenames)
             break
@@ -544,10 +466,9 @@ def main():
         files.sort()
 
         for xmlfile in files:
-            mcu = device(os.path.join(args[1], xmlfile), args[2])
-            if(mcu.pdf != ""):
-                lib.write(mcu.componentstring)
-                docu.write(mcu.docustring)
+            mcu = device(os.path.join(args[1], xmlfile))
+            lib.write(mcu.componentstring)
+            docu.write(mcu.docustring)
 
         lib.write("#\r\n# End Library\r\n")
         lib.close()
@@ -558,7 +479,7 @@ def main():
         printHelp()
 
 def printHelp():
-    print("Usage: main.py path/to/xmldir path/to/pdfdir \r\nDirectory should ONLY contain valid xml files, otherwise the result will be bogus.\r\nI haven't included any error checking, so good luck!")
+    print("Usage: main.py path/to/xmldir\r\nDirectory should ONLY contain valid xml files, otherwise the result will be bogus.\r\nI haven't included any error checking, so good luck!")
 
 if __name__ == "__main__":
     main()
