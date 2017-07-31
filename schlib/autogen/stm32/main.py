@@ -17,7 +17,7 @@ SPECIAL_PIN_MAPPING = {"VSS/TH": ["VSS/TH"],
 SPECIAL_TYPES_MAPPING = {"RCC_OSC_IN": "Clock", "RCC_OSC_OUT": "Clock"}
 
 PIN_TYPES_MAPPING = {"Power": "W", "I/O": "B", "Reset": "I", "Boot": "I", 
-                     "MonoIO": "B", "NC": "N", "Clock": "I"}
+                     "MonoIO": "B", "NC": "N N", "Clock": "I"}
 
 BOOT1_FIX_PARTS = {r"^STM32F10\d.+$", r"^STM32F2\d\d.+$", r"^STM32F4\d\d.+$", 
                    r"^STM32L1\d\d.+$"}
