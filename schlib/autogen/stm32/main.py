@@ -62,19 +62,6 @@ class pin:
         if self.name == "NC":
             self.pintype = "NC"
 
-    def createPintext(self, left):
-        if (left):
-            if (self.name == ""):
-                s = "/".join(self.altfunctions + self.altNames)
-            else:
-                s = "/".join(self.altfunctions + self.altNames + [self.name])
-        else:
-            if (self.name == ""):
-                s = "/".join(self.altNames + self.altfunctions)
-            else:
-                s = "/".join([self.name] + self.altNames + self.altfunctions)
-        self.pintext = s.replace(" ","")
-
 class device:
     def __init__(self, xmlfile):
         print(xmlfile)
@@ -342,8 +329,7 @@ class device:
             size = 0
             for pin in self.pins:
                 if (pin.placed == True) and (int(pin.y) == i):
-                    pin.createPintext(False)
-                    size += len(pin.pintext)
+                    size += len(pin.name)
 
             if (maxXSize < size):
                 maxXSize = size
@@ -354,9 +340,8 @@ class device:
         for pin in self.topPins:
             pin.x = topX
             topX += 1
-            pin.createPintext(False)
-            if len(pin.pintext) > topMaxLen:
-                topMaxLen = len(pin.pintext)
+            if len(pin.name) > topMaxLen:
+                topMaxLen = len(pin.name)
                 
         bottomMaxLen = 0
         self.bottomPins = sorted(self.bottomPins, key=lambda p: p.name)
@@ -364,9 +349,8 @@ class device:
         for pin in self.bottomPins:
             pin.x = bottomX
             bottomX += 1
-            pin.createPintext(False)
-            if len(pin.pintext) > bottomMaxLen:
-                bottomMaxLen = len(pin.pintext)
+            if len(pin.name) > bottomMaxLen:
+                bottomMaxLen = len(pin.name)
         
         self.yTopMargin = math.ceil((topMaxLen * 47 + 75) / 100)
         self.yBottomMargin = math.ceil((bottomMaxLen * 47 + 75) / 100)
@@ -411,19 +395,17 @@ class device:
         
         y = 0
         for pin in self.rightPins:
-            pin.createPintext(True)
-            s += "X " + pin.pintext + " " + str(pin.pinnumber) + " " + str(int(self.boxWidth / 2 + pinlength)) + " " + str(round(yOffset - (pin.y + self.yTopMargin) * 100)) + " " + str(pinlength) + " L 50 50 1 1 " + PIN_TYPES_MAPPING[pin.pintype] + "\r\n"
+            s += "X " + pin.name + " " + str(pin.pinnumber) + " " + str(int(self.boxWidth / 2 + pinlength)) + " " + str(round(yOffset - (pin.y + self.yTopMargin) * 100)) + " " + str(pinlength) + " L 50 50 1 1 " + PIN_TYPES_MAPPING[pin.pintype] + "\r\n"
             y += 1
                 
         for pin in self.leftPins:
-            pin.createPintext(False)
-            s += "X " + pin.pintext + " " + str(pin.pinnumber) + " " + str(int(- self.boxWidth / 2 - pinlength)) + " " + str(round(yOffset - (pin.y + self.yTopMargin) * 100)) + " " + str(pinlength) + " R 50 50 1 1 " + PIN_TYPES_MAPPING[pin.pintype] + "\r\n"
+            s += "X " + pin.name + " " + str(pin.pinnumber) + " " + str(int(- self.boxWidth / 2 - pinlength)) + " " + str(round(yOffset - (pin.y + self.yTopMargin) * 100)) + " " + str(pinlength) + " R 50 50 1 1 " + PIN_TYPES_MAPPING[pin.pintype] + "\r\n"
             
         for pin in self.topPins:    
-            s += "X " + pin.pintext + " " + str(pin.pinnumber) + " " + str(int(pin.x * 100)) + " " + str(int(yOffset + pinlength)) + " " + str(pinlength) + " D 50 50 1 1 " + PIN_TYPES_MAPPING[pin.pintype] + "\r\n"
+            s += "X " + pin.name + " " + str(pin.pinnumber) + " " + str(int(pin.x * 100)) + " " + str(int(yOffset + pinlength)) + " " + str(pinlength) + " D 50 50 1 1 " + PIN_TYPES_MAPPING[pin.pintype] + "\r\n"
             
         for pin in self.bottomPins:
-            s += "X " + pin.pintext + " " + str(pin.pinnumber) + " " + str(int(pin.x * 100)) + " " + str(int(yOffset - self.boxHeight - pinlength)) + " " + str(pinlength) + " U 50 50 1 1 " + PIN_TYPES_MAPPING[pin.pintype] + "\r\n"
+            s += "X " + pin.name + " " + str(pin.pinnumber) + " " + str(int(pin.x * 100)) + " " + str(int(yOffset - self.boxHeight - pinlength)) + " " + str(pinlength) + " U 50 50 1 1 " + PIN_TYPES_MAPPING[pin.pintype] + "\r\n"
         
         s += "S -" + str(round(self.boxWidth / 2)) + " " + str(int(yOffset - self.boxHeight)) + " " + str(int(self.boxWidth / 2)) + " " + str(int(yOffset)) + " 0 1 10 f\r\n"
         s += "ENDDRAW\r\n"
